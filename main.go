@@ -1,7 +1,5 @@
 package main
 
-// /home/gianni/.config/twitch-cli/.twitch-cli.env
-
 import (
 	"bufio"
 	"fmt"
@@ -137,41 +135,40 @@ func newStream(stream helix.Stream) *Stream {
 	return &s
 }
 
+func playStream(stream *Stream, quality string) {
+	fmt.Println("Starting " + stream.UserName + "'s stream")
+	cmd := exec.Command("streamlink", "-v", "--twitch-disable-hosting", "--title", "{author} - {title}", "https://www.twitch.tv/"+stream.UserName, quality)
+	err := cmd.Run()
+	errhandle(err)
+}
+
 func main() {
-	// cmd := exec.Command("streamlink", "-v", "--title", "{author} - {title}", "https://www.twitch.tv/sodapoppin", "best")
-	// // cmd := exec.Command("streamlink", "https://www.twitch.tv/sodapoppin", "best")
-	// err := cmd.Run()
-	// errhandle(err)
+
 	checkTwitchCLI()
 	client := createClient()
 
 	apiResponse, err := client.GetFollowedStream(&helix.FollowedStreamsParams{
+		// UserID: "spiritmancy",
 		UserID: "80449608",
 	})
 	errhandle(err)
 
+	// possible to inline streams var?
 	streams := apiResponse.Data.Streams
-	for index := range streams {
+	for index := range apiResponse.Data.Streams {
 		st := newStream(streams[index])
 		fmt.Println("printing struct")
 		fmt.Printf("%+v\n", st)
+		playStream(st, "best")
 
 	}
 
-	// fmt.Println(streams[0].)
-
 }
-
-// }
-
-// // streamlink -v --title "{author} - {title}" --twitch-disable-hosting https://www.twitch.tv/sodapoppin best
 
 // // --can-handle-url URL
 // // --config FILENAME
 // // -j, --json
 // //   Output JSON representations instead of the normal text output.
-// // --version-check
-// //   Runs a version check and exits.
 // // -a ARGUMENTS, --player-args ARGUMENTS
 // //   This option allows you to customize the default arguments which are put
 // //   together with the value of --player to create a command to execute.
@@ -185,14 +182,6 @@ func main() {
 // //   setting your player to a "repeat mode".
 
 // // --default-stream STREAM -> aka best
-
-// // --retry-max COUNT
-// //   When using --retry-streams, stop retrying the fetch after COUNT retry
-// //   attempt(s). Fetch will retry infinitely if COUNT is zero or unset.
-
-// //   If --retry-max is set without setting --retry-streams, the delay between
-// //   retries will default to 1 second.
-
-// // --retry-open ATTEMPTS
-// //   After a successful fetch, try ATTEMPTS time(s) to open the stream until
-// //   giving up.
+// TODOS:
+// * obtain userid
+// * increase player options (choose player, set retry settings, read streamlink configs), flow options for 'self configuration with out twitch-cli'
