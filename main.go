@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/nicklaw5/helix/v2"
 )
@@ -16,6 +17,14 @@ import (
 func errhandle(err error) {
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func checkTwitchCLI() {
+	fmt.Println("Checking for Twitch-cli")
+	_, err := exec.LookPath("twitch")
+	if err != nil {
+		fmt.Printf("didn't find 'twitch' or 'twitch-cli' executable\n")
 	}
 }
 
@@ -71,6 +80,7 @@ func getCredentials() (cid, secret, access, refresh string) {
 
 	return cid, secret, access, refresh
 }
+
 func createClient() *helix.Client {
 	clientID, clientSecret, accessToken, _ := getCredentials()
 
@@ -93,6 +103,40 @@ func createClient() *helix.Client {
 	return client
 }
 
+type Stream struct {
+	Title        string
+	UserLogin    string
+	UserName     string
+	GameName     string
+	GameID       string
+	StartedAt    time.Time
+	IsMature     bool
+	ID           string
+	ThumbnailURL string
+	TagIDs       []string
+	Type         string
+	UserID       string
+	ViewerCount  int
+}
+
+func newStream(stream helix.Stream) *Stream {
+	var s Stream
+	s.Title = stream.Title
+	s.UserLogin = stream.UserLogin
+	s.UserName = stream.UserName
+	s.GameName = stream.GameName
+	s.GameID = stream.GameID
+	s.StartedAt = stream.StartedAt
+	s.IsMature = stream.IsMature
+	s.ID = stream.ID
+	s.ThumbnailURL = stream.ThumbnailURL
+	s.TagIDs = stream.TagIDs
+	s.Type = stream.Type
+	s.UserID = stream.UserID
+	s.ViewerCount = stream.ViewerCount
+	return &s
+}
+
 func main() {
 	// cmd := exec.Command("streamlink", "-v", "--title", "{author} - {title}", "https://www.twitch.tv/sodapoppin", "best")
 	// // cmd := exec.Command("streamlink", "https://www.twitch.tv/sodapoppin", "best")
@@ -107,7 +151,14 @@ func main() {
 	errhandle(err)
 
 	streams := apiResponse.Data.Streams
-	fmt.Println(streams)
+	for index := range streams {
+		st := newStream(streams[index])
+		fmt.Println("printing struct")
+		fmt.Printf("%+v\n", st)
+
+	}
+
+	// fmt.Println(streams[0].)
 
 }
 
@@ -145,11 +196,3 @@ func main() {
 // // --retry-open ATTEMPTS
 // //   After a successful fetch, try ATTEMPTS time(s) to open the stream until
 // //   giving up.
-
-func checkTwitchCLI() {
-	fmt.Println("Checking for Twitch-cli")
-	_, err := exec.LookPath("twitch")
-	if err != nil {
-		fmt.Printf("didn't find 'twitch' or 'twitch-cli' executable\n")
-	}
-}
