@@ -3,12 +3,17 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/dolmen-go/kittyimg"
 	"github.com/nicklaw5/helix/v2"
 )
 
@@ -127,7 +132,7 @@ func newStream(stream helix.Stream) *Stream {
 	s.StartedAt = stream.StartedAt
 	s.IsMature = stream.IsMature
 	s.ID = stream.ID
-	s.ThumbnailURL = stream.ThumbnailURL
+	s.ThumbnailURL = strings.Replace(stream.ThumbnailURL, "{width}x{height}", "260x200", 1)
 	s.TagIDs = stream.TagIDs
 	s.Type = stream.Type
 	s.UserID = stream.UserID
@@ -140,6 +145,27 @@ func playStream(stream *Stream, quality string) {
 	cmd := exec.Command("streamlink", "-v", "--twitch-disable-hosting", "--title", "{author} - {title}", "https://www.twitch.tv/"+stream.UserName, quality)
 	err := cmd.Run()
 	errhandle(err)
+}
+
+func grabThumbnail(st *Stream) (filePath string) {
+	filePath = st.UserName + "-thumb.png"
+	cmd := exec.Command("curl", "-o", filePath, st.ThumbnailURL)
+	cmd.Start()
+	cmd.Wait()
+	return filePath
+}
+
+func displayThumbnail(st *Stream) {
+	imagePath := grabThumbnail(st)
+	file, err := os.Open(imagePath)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	thumbNail, _, err := image.Decode(file)
+
+	kittyimg.Fprint(os.Stdout, thumbNail)
 }
 
 func main() {
@@ -159,10 +185,11 @@ func main() {
 		st := newStream(streams[index])
 		fmt.Println("printing struct")
 		fmt.Printf("%+v\n", st)
-		playStream(st, "best")
+		displayThumbnail(st)
 
 	}
 
+	// playStream(*streams[0], "best")
 }
 
 // // --can-handle-url URL
